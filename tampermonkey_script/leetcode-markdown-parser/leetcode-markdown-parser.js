@@ -34,9 +34,9 @@
         // 1) title: 标题
         // 2) difficulty: 难度
         // 3) contentDom: 题目内容的DOM树
-        var title = $("#question-detail-main-tabs > div.css-fwb2av-layer1.css-12hreja-TabContent.e16udao5 > div > div.css-xfm0cl-Container.eugt34i0 > h4 > a").text();
-        var difficulty = "难度: " + $("#question-detail-main-tabs > div.css-fwb2av-layer1.css-12hreja-TabContent.e16udao5 > div > div.css-xfm0cl-Container.eugt34i0 > div > span:nth-child(2)").text();
-        var contentDom = $("#question-detail-main-tabs > div.css-fwb2av-layer1.css-12hreja-TabContent.e16udao5 > div > div.content__1Y2H > div");
+        var title = $("#question-detail-main-tabs > div.css-1qqaagl-layer1.css-12hreja-TabContent.e16udao5 > div > div.css-xfm0cl-Container.eugt34i0 > h4 > a").text();
+        var difficulty = "难度: " + $("#question-detail-main-tabs > div.css-1qqaagl-layer1.css-12hreja-TabContent.e16udao5 > div > div.css-xfm0cl-Container.eugt34i0 > div > span:nth-child(2)").text();
+        var contentDom = $("#question-detail-main-tabs > div.css-1qqaagl-layer1.css-12hreja-TabContent.e16udao5 > div > div.css-1rngd9y-ZoomWrapper.e13l6k8o9 > div > div");
 
         console.log("title: ", title);
         console.log("difficulty: ", difficulty);
