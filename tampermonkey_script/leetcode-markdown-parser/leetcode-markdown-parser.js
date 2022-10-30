@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         leetcode-markdown-parser
+// @name         leetcode-markdown-parser-v3
 // @namespace    https://gitee.com/tomocat/cat-script
 // @version      1.0
 // @description  parse leetcode prob from html to markdown
@@ -30,13 +30,13 @@
 
 
     GM_registerMenuCommand("将LeetCode题目复制为MarkDown", function () {
-        // 获取网页元素
+        // 获取网页元素: 这三段可能需要经常更新
         // 1) title: 标题
         // 2) difficulty: 难度
         // 3) contentDom: 题目内容的DOM树
-        var title = $("#question-detail-main-tabs > div.css-1qqaagl-layer1.css-12hreja-TabContent.e16udao5 > div > div.css-xfm0cl-Container.eugt34i0 > h4 > a").text();
-        var difficulty = "难度: " + $("#question-detail-main-tabs > div.css-1qqaagl-layer1.css-12hreja-TabContent.e16udao5 > div > div.css-xfm0cl-Container.eugt34i0 > div > span:nth-child(2)").text();
-        var contentDom = $("#question-detail-main-tabs > div.css-1qqaagl-layer1.css-12hreja-TabContent.e16udao5 > div > div.css-1rngd9y-ZoomWrapper.e13l6k8o9 > div > div");
+        var title = $("#qd-content > div.h-full.flex-col.ssg__qd-splitter-primary-w > div > div.flex.h-full.w-full.overflow-y-auto > div > div > div.w-full.px-5.pt-4 > div > div:nth-child(1) > div.flex-1 > div > div > span").text();
+        var difficulty = "难度: " + $("#qd-content > div.h-full.flex-col.ssg__qd-splitter-primary-w > div > div.flex.h-full.w-full.overflow-y-auto > div > div > div.w-full.px-5.pt-4 > div > div.mt-3.flex.space-x-4 > div:nth-child(1) > div").text();
+        var contentDom = $("#qd-content > div.h-full.flex-col.ssg__qd-splitter-primary-w > div > div.flex.h-full.w-full.overflow-y-auto > div > div > div:nth-child(3) > div");
 
         console.log("title: ", title);
         console.log("difficulty: ", difficulty);
@@ -47,9 +47,9 @@
             parseDom($(this));
         });
 
-        var res = "# " + title + "\n ## 题目 \n" + difficulty + "\n" + contentStr +
-            "来源: 力扣（LeetCode）\n链接: " + unsafeWindow.location.href +
-            "\n著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。";
+        var res = "# " + title + "\n\n## 题目\n\n" + difficulty + "\n" + contentStr +
+            "\n> 来源: 力扣（LeetCode）\n> 链接: " + unsafeWindow.location.href +
+            "\n> 著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。";
         console.log("解析结果:\n" + res);
 
         // 将解析出的markdown字符串写入剪贴板
@@ -114,6 +114,8 @@
     function parseHtml2Markdown(html) {
         // 空格
         html = html.replaceAll(/&nbsp;/, ' ');
+        // 原生空格
+        html = html.replaceAll(/ /, '');
         // 换行
         // html = html.replaceAll(/<br\s*(\/)*>/, '\n\n');
         // 小于符号
@@ -123,12 +125,15 @@
         // 加粗
         html = html.replaceAll(/<strong>/, '**');
         html = html.replaceAll(/<\/strong>/, '**');
-        html = html.replaceAll(/<b>/, '**');
-        html = html.replaceAll(/<\/b>/, '**');
+        html = html.replaceAll(/<b>/, ' **');
+        html = html.replaceAll(/<\/b>/, '** ');
         // 去掉空的加粗块
         html = html.replaceAll(/\*\*\s+\*\*\s+/, '');
         // 去掉行内代码块
         html = html.replaceAll(/<[/]{0,1}code>/, '');
+        // 去掉斜体
+        html = html.replaceAll(/<em>/, ' *');
+        html = html.replaceAll(/<\/em>/, '* ');
         // 下标
         // html = html.replaceAll(/<sub>/, '$_{');
         // html = html.replaceAll(/<\/sub>/, '}$');
