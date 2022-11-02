@@ -34,9 +34,9 @@
         // 1) title: 标题
         // 2) difficulty: 难度
         // 3) contentDom: 题目内容的DOM树
-        var title = $("#qd-content > div.h-full.flex-col.ssg__qd-splitter-primary-w > div > div.flex.h-full.w-full.overflow-y-auto > div > div > div.w-full.px-5.pt-4 > div > div:nth-child(1) > div.flex-1 > div > div > span").text();
-        var difficulty = "难度: " + $("#qd-content > div.h-full.flex-col.ssg__qd-splitter-primary-w > div > div.flex.h-full.w-full.overflow-y-auto > div > div > div.w-full.px-5.pt-4 > div > div.mt-3.flex.space-x-4 > div:nth-child(1) > div").text();
-        var contentDom = $("#qd-content > div.h-full.flex-col.ssg__qd-splitter-primary-w > div > div.flex.h-full.w-full.overflow-y-auto > div > div > div:nth-child(3) > div");
+        var title = $("#qd-content > div.h-full.flex-col.ssg__qd-splitter-primary-w > div > div > div > div.flex.h-full.w-full.overflow-y-auto > div > div > div.w-full.px-5.pt-4 > div > div:nth-child(1) > div.flex-1 > div > div > span").text();
+        var difficulty = "难度: " + $("#qd-content > div.h-full.flex-col.ssg__qd-splitter-primary-w > div > div > div > div.flex.h-full.w-full.overflow-y-auto > div > div > div.w-full.px-5.pt-4 > div > div.mt-3.flex.space-x-4 > div:nth-child(1) > div").text();
+        var contentDom = $("#qd-content > div.h-full.flex-col.ssg__qd-splitter-primary-w > div > div > div > div.flex.h-full.w-full.overflow-y-auto > div > div > div:nth-child(3)");
 
         console.log("title: ", title);
         console.log("difficulty: ", difficulty);
@@ -89,8 +89,8 @@
                 ulHtml += '\n';
                 contentStr += ulHtml
                 break;
+            // 块级元素
             case "DIV":
-                alert("未完全支持的标签DIV");
                 dom.children().each(function () {
                     parseDom($(this));
                 });
