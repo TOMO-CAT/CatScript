@@ -91,7 +91,7 @@ esac
 colors="${colors:-"-4,-8,-4"}"
  
 # 主体函数
-awk -F '\t' \
+gawk -F '\t' \
     -v table_s="${tbs}" \
     -v color_s="${colors}" \
     'BEGIN{
