@@ -1,100 +1,4 @@
-#!/bin/bash
-#############################################################################
-# 作者：banemon
-# 邮箱：banemon@
-# 修改: tomocat
-# Git: https://gitee.com/banemon/linux_sh_script
-# 使用说明: https://zhuanlan.zhihu.com/p/144802861
-# 命令：sh draw_table.sh < file.txt 或 echo -e "A\tB\na\tb" | sh draw_table.sh
-# 帮助：draw_table.sh --help
-#############################################################################
-
-# 表格样式style
-style="$1"
-case ${style} in
-    # tbs包含16个符号, 每个符号表示的含义如下:
-    # 1 2 3 4 5 6 7 8 9 10       11      12      13       14      15      16
-    # 1 2 3 4 5 6 7 8 9 txt_empt top_row mid_row btm_row left_col mid_col right_col 
-    -0)  tbs="                ";;
-    -1)  tbs="└┴┘├┼┤┌┬┐ ───│││";;
-    -2)  tbs="└─┘│┼│┌─┐ ───│││";;
-    -3)  tbs="╚╩╝╠╬╣╔╦╗ ═══║║║";;
-    -4)  tbs="╚═╝║╬║╔═╗ ═══║║║";;
-    -5)  tbs="╙╨╜╟╫╢╓╥╖ ───║║║";;
-    -6)  tbs="╘╧╛╞╪╡╒╤╕ ═══│││";;
-    -7)  tbs="└┴┘├┼┤┌┬┐ ─ ─│ │";;
-    -8)  tbs="└─┘│┼│┌─┐ ─ ─│ │";;
-    -9)  tbs="╚╩╝╠╬╣╔╦╗ ═ ═║ ║";;
-    -10) tbs="╚═╝║╬║╔═╗ ═ ═║ ║";;
-    -11) tbs="╙╨╜╟╫╢╓╥╖ ─ ─║ ║";;
-    -12) tbs="╘╧╛╞╪╡╒╤╕ ═ ═│ │";;
-    -13) tbs="╘╧╛╞╪╡╒╤╕ ═ ═│ │";;
-    -14) tbs="╚╩╝╠╬╣╔╦╗ ───│││";;
-    -15) tbs="+++++++++ ---|||";;
-    # 自定义表格边框：需要用"%"开头，前9位表示表格边框，第10位表示填充字符，第11-13 表示行的上、中、下分隔符，第14-16表示列的左、中、右分隔符
-    # ${string/substring/replacement}: 使用$replacement, 来代替第一个匹配的$substring, 这里是去掉开头的%, 另外由于%是特殊字符需要加上双引号(或者反斜杠)
-    "%"*) tbs="${style/"%"/}";;
-    # 等价于: \%*) tbs="${style/\%/}";;
-    -h*|--h*)
-        # -e 参数激活转移字符, 比如\t表示制表符
-        echo -e '
-\t [  ---   HELP  ---  ]
-\t command : sh draw_table.sh [style] [colors] < <file>
-\t    pipo : echo -e A\\tB\\na\\tb | draw_table.sh [style] [colors]
-\t [style] : input 16 characters
-\t           1~9 is Num. keypad as table,10 is not used
-\t           11~13 are up,middle,down in a row
-\t           14~16 are left,middle,right in a column
-\t
-\t         -0  :                
-\t         -1  :└┴┘├┼┤┌┬┐ ───│││         -9  :╚╩╝╠╬╣╔╦╗ ═ ═║ ║
-\t         -2  :└─┘│┼│┌─┐ ───│││         -10 :╚═╝║╬║╔═╗ ═ ═║ ║
-\t         -3  :╚╩╝╠╬╣╔╦╗ ═══║║║         -11 :╙╨╜╟╫╢╓╥╖ ─ ─║ ║
-\t         -4  :╚═╝║╬║╔═╗ ═══║║║         -12 :╘╧╛╞╪╡╒╤╕ ═ ═│ │
-\t         -5  :╙╨╜╟╫╢╓╥╖ ───║║║         -13 :╘╧╛╞╪╡╒╤╕ ═ ═│ │
-\t         -6  :╘╧╛╞╪╡╒╤╕ ═══│││         -14 :╚╩╝╠╬╣╔╦╗ ───│││
-\t         -7  :└┴┘├┼┤┌┬┐ ─ ─│ │         -15 :+++++++++ ---|||
-\t         -8  :└─┘│┼│┌─┐ ─ ─│ │
-\t
-\t [colors]: input a list,like "-3,-4,-8" sames "-green,-yellow,-white"
-\t           It set color,table cross ,font ,middle. Or \\033[xxm .
-\t           And support custom color set  every characters of sytle
-\t           Like "\\033[30m,-red,-yellow,,,,,,,,,,,,," sum 16.
-\t
-\t          -1|-black         -5|-blue
-\t          -2|-red           -6|-purple
-\t          -3|-green         -7|-cyan
-\t          -4|-yellow        -8|-white
-        '
-        exit
-        ;;
-esac
-# 当没有参数时, 设定tbs的默认值
-tbs="${tbs:-"+++++++++,---|||"}"
-
-# 颜色
-color="$2"
-case $color in
-    # 1~3可用于设置自己喜欢的自定义样式, 设置${color}的值即可
-    1) ;;
-    2) ;;
-    3) ;;
-    "-"*|"\033"*)
-        # 3位数标,词
-        colors="$color"
-        ;;
-    "%"*) :
-        # %号开头的全自定义
-        colors="${color/"%"/}"
-        ;;
-esac
-colors="${colors:-"-4,-8,-4"}"
- 
-# 主体函数
-awk -F '\t' \
-    -v table_s="${tbs}" \
-    -v color_s="${colors}" \
-    'BEGIN{
+awk -F '\t' -v 'table_s=+++++++++,---|||' -v color_s='-4,-8,-4' 'BEGIN{
     }{
         # ------------------------------------------遍历每行记录全局变量------------------------------------------
         # cols_len[NF]: 存储了每一列的最大长度, 每列最大长度等于该列最长的元素的长度
@@ -106,18 +10,18 @@ awk -F '\t' \
         # 计算单列行的最大长度
         if (NF == 1) { 
             max_single_col_length = max_single_col_length < super_length($1) ? super_length($1) : max_single_col_length
-            rows[NR][1] = $1
+            rows[NR, 1] = $1
         } else { # 非单列行更新每一列的最大长度 
             for(i=1; i<=NF; i++){
                 cols_len[i]=cols_len[i] < super_length($i) ? super_length($i) : cols_len[i]
-                rows[NR][i]=$i
+                rows[NR, i]=$i
             }
         }
 
         # 前后行状态
         if (NR == 1) {PrevNF=0}
         # 每行第0列存储前一行和当前行的列数, 用于确定当行的表格样式
-        rows[NR][0] = PrevNF "," NF
+        rows[NR, 0] = PrevNF "," NF
         PrevNF=NF
         
     }END{
@@ -205,7 +109,7 @@ awk -F '\t' \
         row_num = length(rows)
         for(i=1; i<=row_num; i++){
             # 解析出前一行和当前行的列数
-            split(rows[i][0], col_num_list, ",")
+            split(rows[i, 0], col_num_list, ",")
             prev_col_num = int(col_num_list[1])
             curr_col_num = int(col_num_list[2])
 
@@ -214,23 +118,25 @@ awk -F '\t' \
                 if (curr_col_num <= 1) {
                     # 单列
                     print title_top
-                    print line_val("title_txt", rows[i][1], max_single_col_length)
-                
+                    # print line_val("title_txt", rows[i, 1], max_single_col_length)
+                    print line_val("title_txt", rows, i, true, max_single_col_length)
                 } else if (curr_col_num >= 2) {
                     # 多列
                     print top
-                    print line_val("txt", rows[i])
-                }	
+                    print line_val("txt", rows, i, false)
+                }
             } else if (prev_col_num <=1 ) {
                 # 前一行为单列时
                 if (curr_col_num <=1 ) {
                     # 单列
                     print title_mid
-                    print line_val("title_txt", rows[i][1], max_single_col_length)
+                    # print line_val("title_txt", rows[i, 1], max_single_col_length)
+                    print line_val("title_txt", rows, i, true, max_single_col_length)
                 } else if (curr_col_num >= 2) {
                     # 多列
                     print title_btm_mid
-                    print line_val("txt", rows[i])
+                    # print line_val("txt", rows[i])
+                    print line_val("txt", rows, i, false)
                 }
             
             }else if (prev_col_num >= 2) {
@@ -238,12 +144,14 @@ awk -F '\t' \
                 if (curr_col_num <= 1) {
                     # 单列
                     print title_top_mid
-                    print line_val("title_txt", rows[i][1], max_single_col_length)
+                    # print line_val("title_txt", rows[i, 1], max_single_col_length)
+                    print line_val("title_txt", rows, i, true, max_single_col_length)
 
                 } else if (curr_col_num >= 2) {
                     # 多列
                     print mid
-                    print line_val("txt", rows[i])
+                    # print line_val("txt", rows[i])
+                    print line_val("txt", rows, i, false)
                 }
             }
             # 表格底边
@@ -292,10 +200,10 @@ awk -F '\t' \
     }
 
     # ------------------------------------------生成绘制内容的函数------------------------------------------
-    # 参数: part绘制的位置; txt绘制的文本内容; cell_lens绘制的单元格长度
+    # 参数: part 绘制的位置; txt 绘制的文本内容; cell_lens 绘制的单元格长度
     # eg: tbs为已着色的制表符 ╚ ╩ ╝ ╠ ╬ ╣ ╔ ╦ ╗ , ═ ═ ═ ║ ║ ║
     # TODO: cell_len, line, i这三个参数的意义何在, awk的特殊用法?
-    function line_val(part, txt, cell_lens, cell_len, line, i) {
+    function line_val(part, txt, row_idx, is_single_col, cell_lens, cell_len, line, i) {
         # 更新本次行标
         if (part=="top") {
             tbs_l=tbs[7]
@@ -321,37 +229,37 @@ awk -F '\t' \
             tbs_l=tbs[7]
             tbs_m=tbs[11]
             tbs_r=tbs[9]
-            tbs_b=tbs[11]			
+            tbs_b=tbs[11]
         } else if (part=="title_top_mid"){
             tbs_l=tbs[4]
             tbs_m=tbs[2]
             tbs_r=tbs[6]
-            tbs_b=tbs[12]			
+            tbs_b=tbs[12]
         } else if (part=="title_mid"){
             tbs_l=tbs[4]
             tbs_m=tbs[12]
             tbs_r=tbs[6]
-            tbs_b=tbs[12]			
+            tbs_b=tbs[12]
         } else if (part=="title_txt"){
             tbs_l=tbs[14] tbs[10]
             tbs_m=tbs[10] tbs[15] tbs[10]
             tbs_r=tbs[10] tbs[16]
-            tbs_b=tbs[10]			
+            tbs_b=tbs[10]
         } else if (part=="title_btm"){
             tbs_l=tbs[1]
             tbs_m=tbs[13]
             tbs_r=tbs[3]
-            tbs_b=tbs[13]			
+            tbs_b=tbs[13]
         } else if (part=="title_btm_mid"){
             tbs_l=tbs[4]
             tbs_m=tbs[8]
             tbs_r=tbs[6]
-            tbs_b=tbs[12]			
+            tbs_b=tbs[12]
         }
 
         # title行只有一列文本
         if (part == "title_txt") {
-            cols_count=1
+            cols_count = 1
         } else {
             cols_count = length(cols_len)
         }
@@ -359,15 +267,15 @@ awk -F '\t' \
         # 遍历该行所有列, 构造改行的内容
         line_content = ""
 
-        # 对于一行内的每一个单元格, 计算单元格文本cell_txt 和 对应的空白字符填充数fill_len
+        # 对于一行内的每一个单元格, 计算单元格文本 cell_txt 和 对应的空白字符填充数 fill_len
         for (i=1; i<=cols_count; i++) {
             if (part == "txt") {
                 # 多列左对齐
-                cell_txt = txt[i]
+                cell_txt = txt[row_idx, i]
                 fill_len = cols_len[i] - super_length(cell_txt)
             }else if(part=="title_txt"){
                 # 单列居中
-                cell_txt = txt
+                cell_txt = txt[row_idx, i]
                 fill_len = (cell_lens - super_length(cell_txt)) / 2
                 is_need_fix = (cell_lens - super_length(cell_txt)) % 2 # 如果填充字符长度非偶数则需要fix
             } else {
@@ -409,4 +317,4 @@ awk -F '\t' \
         # 返回行: tbs_l表示最左侧的表格样式, line_content表示该行的内容
         return tbs_l line_content
     }
-    ' 
+    '

@@ -9,8 +9,12 @@
 # 帮助：draw_table.sh --help
 #############################################################################
 
+set -exu
+
 # 表格样式style
-style="$1"
+# ${parameter:-word} 语法表示如果 `parameter` 未设置或者为空则使用 word 作为默认值
+# 这里 $1 非空则将 style 设置成 $1, 否则将 style 设置为空字符串
+style="${1:-}"
 case ${style} in
     # tbs包含16个符号, 每个符号表示的含义如下:
     # 1 2 3 4 5 6 7 8 9 10       11      12      13       14      15      16
@@ -73,7 +77,7 @@ esac
 tbs="${tbs:-"+++++++++,---|||"}"
 
 # 颜色
-color="$2"
+color="${1:-}"
 case $color in
     # 1~3可用于设置自己喜欢的自定义样式, 设置${color}的值即可
     1) ;;
@@ -91,6 +95,8 @@ esac
 colors="${colors:-"-4,-8,-4"}"
  
 # 主体函数
+# -F: 指定字符分割符
+# -v: 定义变量
 awk -F '\t' \
     -v table_s="${tbs}" \
     -v color_s="${colors}" \
@@ -409,4 +415,4 @@ awk -F '\t' \
         # 返回行: tbs_l表示最左侧的表格样式, line_content表示该行的内容
         return tbs_l line_content
     }
-    ' 
+    '

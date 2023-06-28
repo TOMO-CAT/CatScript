@@ -54,5 +54,41 @@ A 78 B 34 B   B   B   C
 1cccc2cccc2ccc2ccc2ccc3
 ```
 
+## 注意事项
 
+### 1. awk 二维数组
 
+awk 支持定义数组：
+
+```bash
+$ echo "" | awk '{ rows[100] = 2000 } END { print rows[100] }'
+2000
+
+$ echo "" | awk '{ rows["kk"] = "vv" } END { print rows["kk"] }'
+vv
+```
+
+之前在 centos 7.2 中的 awk 支持二维数组写成 `array[i][j]`，但是在 ubuntu 2204 中报错：
+
+```bash
+$ echo "" | awk '{ rows["kkk"]["mmm"] = 2000 } END { print 1 }'
+awk: line 1: syntax error at or near [
+```
+
+需要修改成 `array[i,j]`：
+
+```bash
+$ echo "" | awk '{ rows["kkk", "mmm"] = 2000 } END { print rows["kkk", "mmm"] 
+}'
+2000
+
+$ echo "" | awk '{ rows[1, 2] = 2000 } END { print rows[1, 2] }'
+2000
+```
+
+如何取出来第 k 行：
+
+```bash
+$ echo "" | awk '{ rows[1, 2] = 2000; rows[1, 3] = 3000 } END { print rows[1,3] }'
+2000
+```
