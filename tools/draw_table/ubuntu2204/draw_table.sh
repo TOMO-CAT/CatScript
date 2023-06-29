@@ -77,7 +77,7 @@ esac
 tbs="${tbs:-"+++++++++,---|||"}"
 
 # 颜色
-color="${1:-}"
+color="${2:-}"
 case $color in
     # 1~3可用于设置自己喜欢的自定义样式, 设置${color}的值即可
     1) ;;
@@ -93,7 +93,9 @@ case $color in
         ;;
 esac
 colors="${colors:-"-4,-8,-4"}"
- 
+
+# echo "colors: ${colors}"
+
 # 主体函数
 # -F: 指定字符分割符
 # -v: 定义变量
@@ -102,7 +104,7 @@ awk -F '\t' \
     -v color_s="${colors}" \
     'BEGIN {} {
         # ------------------------------------------ 遍历每行记录全局变量 ------------------------------------------
-        # NF: 列数
+        # NF: 该行列数
         # NR: 行数
         #
         # cols_len[NF]: 存储了每一列的最大长度, 每列最大长度等于该列最长的元素的长度
@@ -116,6 +118,7 @@ awk -F '\t' \
         if (NF == 1) { 
             max_single_col_length = max_single_col_length < super_length($1) ? super_length($1) : max_single_col_length
             rows[NR, 1] = $1
+            cols_len[1] = cols_len[1] < super_length($1) ? super_length($1) : cols_len[1]
         } else { # 非单列行更新每一列的最大长度 
             for(i = 1; i <= NF; i++){
                 cols_len[i] = cols_len[i] < super_length($i) ? super_length($i) : cols_len[i]
