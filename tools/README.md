@@ -1,12 +1,18 @@
-# draw_table.sh
+# shell脚本
 
-## 功能
+## 特性
+
+1. 支持 centos、mac 和 ubuntu 等多种平台
+
+## draw_table.sh
+
+#### 1. 功能
 
 在终端可视化输出表格数据（列用`\t`分隔，行用`\n`分隔）
 
-![](https://pic.downk.cc/item/5ed28e2dc2a9a83be514c3a8.jpg)
+![](./draw_table.jpeg)
 
-## 使用方法
+#### 2. 使用方法
 
 > https://zhuanlan.zhihu.com/p/144802861
 
@@ -52,43 +58,4 @@ A          5          C
 4bbbb8bbbb8bbb8bbb8bbb6
 A 78 B 34 B   B   B   C
 1cccc2cccc2ccc2ccc2ccc3
-```
-
-## 注意事项
-
-### 1. awk 二维数组
-
-awk 支持定义数组：
-
-```bash
-$ echo "" | awk '{ rows[100] = 2000 } END { print rows[100] }'
-2000
-
-$ echo "" | awk '{ rows["kk"] = "vv" } END { print rows["kk"] }'
-vv
-```
-
-之前在 centos 7.2 中的 awk 支持二维数组写成 `array[i][j]`，但是在 ubuntu 2204 中报错：
-
-```bash
-$ echo "" | awk '{ rows["kkk"]["mmm"] = 2000 } END { print 1 }'
-awk: line 1: syntax error at or near [
-```
-
-需要修改成 `array[i,j]`：
-
-```bash
-$ echo "" | awk '{ rows["kkk", "mmm"] = 2000 } END { print rows["kkk", "mmm"] 
-}'
-2000
-
-$ echo "" | awk '{ rows[1, 2] = 2000 } END { print rows[1, 2] }'
-2000
-```
-
-如何取出来第 k 行：
-
-```bash
-$ echo "" | awk '{ rows[1, 2] = 2000; rows[1, 3] = 3000 } END { print rows[1,3] }'
-2000
 ```

@@ -1,7 +1,8 @@
 # Cat Script
 
 ## 简介
-归类开发中常用的脚本，包括python、shell等。
+
+归类开发中常用的脚本，包括 python、shell 等。
 
 ## shell脚本
 

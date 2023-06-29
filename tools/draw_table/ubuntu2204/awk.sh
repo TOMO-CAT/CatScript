@@ -15,34 +15,38 @@ Function3\t257
 Function4\t113" | sh awk.sh
 COMMENT
 
-awk -F '\t' -v table_s='+++++++++,---|||' -v color_s='-red,-white,-blue' 'BEGIN{
-    }{
-        # ------------------------------------------遍历每行记录全局变量------------------------------------------
+awk -F '\t' -v table_s='+++++++++,---|||' -v color_s='-red,-white,-blue' 'BEGIN {
+    } {
+        # ------------------------------------------ 遍历每行记录全局变量 ------------------------------------------
+        # NF: 列数
+        # NR: 行数
+        #
         # cols_len[NF]: 存储了每一列的最大长度, 每列最大长度等于该列最长的元素的长度
-        # rows[NR][NF]: 将文件的每行每列的数据记录到rows二维数组中
-        # rows[NR][0]: 第0列存储前一行和后一行的列数, 用于确定当行的表格样式
+        # rows[NR][NF]: 将文件的每行每列的数据记录到 rows 二维数组中
+        # rows[NR][0]: 第 0 列存储前一行和后一行的列数, 用于确定当行的表格样式
+        #
         # max_single_col_length: 单列行的最大长度
-        # ps: 由于单列是直接合并整行的单元格, 为图表美观(防止cols_len[1]因为某些特长的单列而增长), 单独记录单列的最大长度
+        # @note: 由于单列是直接合并整行的单元格, 为图表美观 (防止 cols_len[1] 因为某些特长的单列而增长), 单独记录单列的最大长度
 
         # 计算单列行的最大长度
         if (NF == 1) { 
             max_single_col_length = max_single_col_length < super_length($1) ? super_length($1) : max_single_col_length
             rows[NR, 1] = $1
         } else { # 非单列行更新每一列的最大长度 
-            for(i=1; i<=NF; i++){
-                cols_len[i]=cols_len[i] < super_length($i) ? super_length($i) : cols_len[i]
-                rows[NR, i]=$i
+            for(i = 1; i <= NF; i++){
+                cols_len[i] = cols_len[i] < super_length($i) ? super_length($i) : cols_len[i]
+                rows[NR, i] = $i
             }
         }
 
         # 前后行状态
-        if (NR == 1) {PrevNF=0}
+        if (NR == 1) { PrevNF = 0 }
+
         # 每行第0列存储前一行和当前行的列数, 用于确定当行的表格样式
         rows[NR, 0] = PrevNF "," NF
         PrevNF=NF
-        
-    }END{
-        # ------------------------------------------colors变量着色, 生成colors和tbs变量------------------------------------------
+    } END {
+        # ------------------------------------------ colors 变量着色, 生成 colors 和 tbs 变量 ------------------------------------------
         # 构建颜色向量: colors, 长度为16
         color_sum = split(color_s,clr_id,",")
         if (color_sum == 3){ # 简易自定义模式: 传入三种颜色
@@ -52,7 +56,7 @@ awk -F '\t' -v table_s='+++++++++,---|||' -v color_s='-red,-white,-blue' 'BEGIN{
                 }
             }
             # 组建色表: 三种颜色构造colors向量
-            for (i=1; i<=16; i++) {
+            for (i = 1; i <= 16; i++) {
                 if (i < 10) {
                     colors[i] = clr_id[1]
                 } else if (i == 10){
@@ -61,9 +65,9 @@ awk -F '\t' -v table_s='+++++++++,---|||' -v color_s='-red,-white,-blue' 'BEGIN{
                     colors[i] = clr_id[3]
                 }
             }
-        } else if (color_sum == 16){ # 全自定义模式: 传入16种颜色
-            for (i=1; i<=16; i++){
-                if(color_s ~ "-"){
+        } else if (color_sum == 16){ # 全自定义模式: 传入 16 种颜色
+            for (i = 1; i <= 16; i++) {
+                if(color_s ~ "-") {
                     clr_id[i] = color_var(clr_id[i])
                 }
                 colors[i] = clr_id[i]
@@ -83,7 +87,7 @@ awk -F '\t' -v table_s='+++++++++,---|||' -v color_s='-red,-white,-blue' 'BEGIN{
             fi
         }
 
-        # ------------------------------------------如果单列长度大于非单列最大行长度则调整各列长度------------------------------------------
+        # ------------------------------------------ 如果单列长度大于非单列最大行长度则调整各列长度 ------------------------------------------
         max_line_len = 0 # 统计非单列的最大行长度
         for (i=1; i<=length(cols_len); i++) {
             max_line_len = max_line_len + cols_len[i] + 2 # 每列需要包含2个空格, 防止内容和制表符紧挨着
@@ -103,7 +107,7 @@ awk -F '\t' -v table_s='+++++++++,---|||' -v color_s='-red,-white,-blue' 'BEGIN{
             max_single_col_length = max_line_len - 2
         }
 
-        # ------------------------------------------预存所有的表格线, 减少不必要的重复计算------------------------------------------
+        # ------------------------------------------ 预存所有的表格线, 减少不必要的重复计算 ------------------------------------------
         title_top = line_val("title_top")
         title_mid = line_val("title_mid")
         title_btm_mid = line_val("title_btm_mid")
@@ -122,9 +126,8 @@ awk -F '\t' -v table_s='+++++++++,---|||' -v color_s='-red,-white,-blue' 'BEGIN{
         # print "mid:          " mid" \n"
         # print "btm:          " btm" \n"
 
-        # ------------------------------------------绘制表格------------------------------------------
-        row_num = length(rows)
-        for(i=1; i<=row_num; i++){
+        # ------------------------------------------ 绘制表格 ------------------------------------------
+        for(i = 1; i <= NR; i++){
             # 解析出前一行和当前行的列数
             split(rows[i, 0], col_num_list, ",")
             prev_col_num = int(col_num_list[1])
@@ -135,8 +138,7 @@ awk -F '\t' -v table_s='+++++++++,---|||' -v color_s='-red,-white,-blue' 'BEGIN{
                 if (curr_col_num <= 1) {
                     # 单列
                     print title_top
-                    # print line_val("title_txt", rows[i, 1], max_single_col_length)
-                    print line_val("title_txt", rows, i, true, max_single_col_length)
+                    print line_val("title_txt", rows, i, max_single_col_length)
                 } else if (curr_col_num >= 2) {
                     # 多列
                     print top
@@ -147,35 +149,33 @@ awk -F '\t' -v table_s='+++++++++,---|||' -v color_s='-red,-white,-blue' 'BEGIN{
                 if (curr_col_num <=1 ) {
                     # 单列
                     print title_mid
-                    # print line_val("title_txt", rows[i, 1], max_single_col_length)
-                    print line_val("title_txt", rows, i, true, max_single_col_length)
+                    print line_val("title_txt", rows, i, max_single_col_length)
                 } else if (curr_col_num >= 2) {
                     # 多列
                     print title_btm_mid
                     # print line_val("txt", rows[i])
-                    print line_val("txt", rows, i, false)
+                    print line_val("txt", rows, i)
                 }
             
-            }else if (prev_col_num >= 2) {
+            } else if (prev_col_num >= 2) {
                 # 前一行为多列时
                 if (curr_col_num <= 1) {
                     # 单列
                     print title_top_mid
-                    # print line_val("title_txt", rows[i, 1], max_single_col_length)
-                    print line_val("title_txt", rows, i, true, max_single_col_length)
+                    print line_val("title_txt", rows, i, max_single_col_length)
 
                 } else if (curr_col_num >= 2) {
                     # 多列
                     print mid
-                    # print line_val("txt", rows[i])
-                    print line_val("txt", rows, i, false)
+                    print line_val("txt", rows, i)
                 }
             }
+
             # 表格底边
-            if (i == row_num && curr_col_num <= 1) {
+            if (i == NR && curr_col_num <= 1) {
                 # 尾行单列时
                 print title_btm
-            } else if (i == row_num && curr_col_num >= 2){
+            } else if (i == NR && curr_col_num >= 2){
                 # 尾行多列时
                 print btm
             }
@@ -183,14 +183,14 @@ awk -F '\t' -v table_s='+++++++++,---|||' -v color_s='-red,-white,-blue' 'BEGIN{
     }
 
     # 返回字符串的长度, 支持中文等双字节字符
-    # eg: 内置函数length("中文")返回2, super_length("中文")返回4
+    # eg: 内置函数 length("中文") 返回 2, super_length("中文") 返回 4
     function super_length(txt){
         leng_base = length(txt);
-        leng_plus = gsub(/[^\x00-\xff]/, "x", txt) # 返回Ascii码大于255的字符匹配个数
+        leng_plus = gsub(/[^\x00-\xff]/, "x", txt) # 返回 Ascii 码大于 255 的字符匹配个数
         return leng_base + leng_plus
     }
 
-    # color_var函数: 解析形如"-n"开头的颜色配置
+    # color_var 函数: 解析形如 "-n" 开头的颜色配置
     function color_var(color){
         if(color=="-1" ||color=="-black"){
             n=30
@@ -216,11 +216,11 @@ awk -F '\t' -v table_s='+++++++++,---|||' -v color_s='-red,-white,-blue' 'BEGIN{
         return "\033[" n "m"
     }
 
-    # ------------------------------------------生成绘制内容的函数------------------------------------------
-    # 参数: part 绘制的位置; txt 绘制的文本内容; cell_lens 绘制的单元格长度
-    # eg: tbs为已着色的制表符 ╚ ╩ ╝ ╠ ╬ ╣ ╔ ╦ ╗ , ═ ═ ═ ║ ║ ║
-    # TODO: cell_len, line, i这三个参数的意义何在, awk的特殊用法?
-    function line_val(part, txt, row_idx, is_single_col, cell_lens, cell_len, line, i) {
+    # ------------------------------------------ 生成绘制内容的函数 ------------------------------------------
+    # 参数: part绘制的位置; txt绘制的文本内容; cell_lens绘制的单元格长度
+    #   @eg: tbs 为已着色的制表符 ╚ ╩ ╝ ╠ ╬ ╣ ╔ ╦ ╗ , ═ ═ ═ ║ ║ ║
+    #   @note: i 和 cell_len 作为循环体变量, 定义在参数中相当于 line_val 函数的局部变量, 避免给函数体外的同名变量赋值 (引用捕获)
+    function line_val(part, txt, row_idx, cell_lens, cell_len, i) {
         # 更新本次行标
         if (part=="top") {
             tbs_l=tbs[7]
@@ -285,7 +285,7 @@ awk -F '\t' -v table_s='+++++++++,---|||' -v color_s='-red,-white,-blue' 'BEGIN{
         line_content = ""
 
         # 对于一行内的每一个单元格, 计算单元格文本 cell_txt 和 对应的空白字符填充数 fill_len
-        for (i=1; i<=cols_count; i++) {
+        for (i = 1; i <= cols_count; i++) {
             if (part == "txt") {
                 # 多列左对齐
                 cell_txt = txt[row_idx, i]
