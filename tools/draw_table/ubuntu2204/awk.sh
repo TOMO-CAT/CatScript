@@ -12,10 +12,10 @@ Function Name\tCount
 Function1\t20
 Function2\t1113
 Function3\t257
-Function4\t113" | sh awk.sh -4 -red,-white,-blue
+Function4\t113" | sh awk.sh
 COMMENT
 
-awk -F '\t' -v 'table_s=+++++++++,---|||' -v color_s='-red,-white,-blue' 'BEGIN{
+awk -F '\t' -v table_s='+++++++++,---|||' -v color_s='-red,-white,-blue' 'BEGIN{
     }{
         # ------------------------------------------遍历每行记录全局变量------------------------------------------
         # cols_len[NF]: 存储了每一列的最大长度, 每列最大长度等于该列最长的元素的长度

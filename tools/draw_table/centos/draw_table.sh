@@ -9,8 +9,10 @@
 # 帮助：draw_table.sh --help
 #############################################################################
 
+set -e
+
 # 表格样式style
-style="$1"
+style="${1:-}"
 case ${style} in
     # tbs包含16个符号, 每个符号表示的含义如下:
     # 1 2 3 4 5 6 7 8 9 10       11      12      13       14      15      16
@@ -42,7 +44,7 @@ case ${style} in
 \t command : sh draw_table.sh [style] [colors] < <file>
 \t    pipo : echo -e A\\tB\\na\\tb | draw_table.sh [style] [colors]
 \t [style] : input 16 characters
-\t           1~9 is Num. keypad as table,10 is not used
+\t           1~9 is Num. keypad as table, 10 is separator
 \t           11~13 are up,middle,down in a row
 \t           14~16 are left,middle,right in a column
 \t
@@ -73,9 +75,9 @@ esac
 tbs="${tbs:-"+++++++++,---|||"}"
 
 # 颜色
-color="$2"
+color="${2:-}"
 case $color in
-    # 1~3可用于设置自己喜欢的自定义样式, 设置${color}的值即可
+    # 1~3 可用于设置自己喜欢的自定义样式(暂时还没实现), 设置${color}的值即可
     1) ;;
     2) ;;
     3) ;;
@@ -96,7 +98,7 @@ gawk -F '\t' \
     -v color_s="${colors}" \
     'BEGIN{
     }{
-        # ------------------------------------------遍历每行记录全局变量------------------------------------------
+        # ------------------------------------------ 遍历每行记录全局变量 ------------------------------------------
         # cols_len[NF]: 存储了每一列的最大长度, 每列最大长度等于该列最长的元素的长度
         # rows[NR][NF]: 将文件的每行每列的数据记录到rows二维数组中
         # rows[NR][0]: 第0列存储前一行和后一行的列数, 用于确定当行的表格样式
@@ -121,7 +123,7 @@ gawk -F '\t' \
         PrevNF=NF
         
     }END{
-        # ------------------------------------------colors变量着色, 生成colors和tbs变量------------------------------------------
+        # ------------------------------------------ colors变量着色, 生成colors和tbs变量 ------------------------------------------
         # 构建颜色向量: colors, 长度为16
         color_sum = split(color_s,clr_id,",")
         if (color_sum == 3){ # 简易自定义模式: 传入三种颜色
@@ -162,7 +164,7 @@ gawk -F '\t' \
             fi
         }
 
-        # ------------------------------------------如果单列长度大于非单列最大行长度则调整各列长度------------------------------------------
+        # ------------------------------------------ 如果单列长度大于非单列最大行长度则调整各列长度 ------------------------------------------
         max_line_len = 0 # 统计非单列的最大行长度
         for (i=1; i<=length(cols_len); i++) {
             max_line_len = max_line_len + cols_len[i] + 2 # 每列需要包含2个空格, 防止内容和制表符紧挨着
@@ -182,7 +184,7 @@ gawk -F '\t' \
             max_single_col_length = max_line_len - 2
         }
 
-        # ------------------------------------------预存所有的表格线, 减少不必要的重复计算------------------------------------------
+        # ------------------------------------------ 预存所有的表格线, 减少不必要的重复计算 ------------------------------------------
         title_top = line_val("title_top")
         title_mid = line_val("title_mid")
         title_btm_mid = line_val("title_btm_mid")
@@ -201,7 +203,7 @@ gawk -F '\t' \
         # print "mid:          " mid" \n"
         # print "btm:          " btm" \n"
 
-        # ------------------------------------------绘制表格------------------------------------------
+        # ------------------------------------------ 绘制表格 ------------------------------------------
         row_num = length(rows)
         for(i=1; i<=row_num; i++){
             # 解析出前一行和当前行的列数
@@ -258,14 +260,14 @@ gawk -F '\t' \
     }
 
     # 返回字符串的长度, 支持中文等双字节字符
-    # eg: 内置函数length("中文")返回2, super_length("中文")返回4
+    # eg: 内置函数 length("中文") 返回 2, super_length("中文") 返回 4
     function super_length(txt){
         leng_base = length(txt);
-        leng_plus = gsub(/[^\x00-\xff]/, "x", txt) # 返回Ascii码大于255的字符匹配个数
+        leng_plus = gsub(/[^\x00-\xff]/, "x", txt) # 返回 Ascii 码大于 255 的字符匹配个数
         return leng_base + leng_plus
     }
 
-    # color_var函数: 解析形如"-n"开头的颜色配置
+    # color_var 函数: 解析形如 "-n" 开头的颜色配置
     function color_var(color){
         if(color=="-1" ||color=="-black"){
             n=30
@@ -291,11 +293,11 @@ gawk -F '\t' \
         return "\033[" n "m"
     }
 
-    # ------------------------------------------生成绘制内容的函数------------------------------------------
+    # ------------------------------------------ 生成绘制内容的函数 ------------------------------------------
     # 参数: part绘制的位置; txt绘制的文本内容; cell_lens绘制的单元格长度
-    # eg: tbs为已着色的制表符 ╚ ╩ ╝ ╠ ╬ ╣ ╔ ╦ ╗ , ═ ═ ═ ║ ║ ║
-    # TODO: cell_len, line, i这三个参数的意义何在, awk的特殊用法?
-    function line_val(part, txt, cell_lens, cell_len, line, i) {
+    #   @eg: tbs 为已着色的制表符 ╚ ╩ ╝ ╠ ╬ ╣ ╔ ╦ ╗ , ═ ═ ═ ║ ║ ║
+    #   @note: i 和 cell_len 作为循环体变量, 定义在参数中相当于 line_val 函数的局部变量, 避免给函数体外的同名变量赋值 (引用捕获)
+    function line_val(part, txt, cell_lens, cell_len, i) {
         # 更新本次行标
         if (part=="top") {
             tbs_l=tbs[7]
@@ -307,7 +309,7 @@ gawk -F '\t' \
             tbs_m=tbs[5]
             tbs_r=tbs[6]
             tbs_b=tbs[12]
-        } else if (part=="txt") { # tbs[10]为填充字符, 用于填充单元格内的空格
+        } else if (part=="txt") { # tbs[10] 为填充字符, 用于填充单元格内的空格
             tbs_l=tbs[14] tbs[10]
             tbs_m=tbs[10] tbs[15] tbs[10] 
             tbs_r=tbs[10] tbs[16]
@@ -359,7 +361,7 @@ gawk -F '\t' \
         # 遍历该行所有列, 构造改行的内容
         line_content = ""
 
-        # 对于一行内的每一个单元格, 计算单元格文本cell_txt 和 对应的空白字符填充数fill_len
+        # 对于一行内的每一个单元格, 计算单元格文本 cell_txt 和 对应的空白字符填充数 fill_len
         for (i=1; i<=cols_count; i++) {
             if (part == "txt") {
                 # 多列左对齐
@@ -380,13 +382,13 @@ gawk -F '\t' \
 
             # 单元格内空白补全
             if (part == "title_txt") {
-                # 单列居中, 在单元格文本两侧补全空格字符
+                # 单列居中, 在单元格文本两侧补全分隔字符 (tbs[10])
                 for (cell_len=1; cell_len <= fill_len; cell_len++) {
                     cell_txt = tbs_b cell_txt tbs_b
                 }
-                # 单列非偶长度补全
+                # 单列非偶长度补全 (右侧增加一个分隔字符 tbs[10])
                 if (is_need_fix == 1) {
-                    cell_txt = cell_txt " "
+                    cell_txt = cell_txt tbs_b
                 }
             }else{
                 # 多列左对齐
@@ -406,7 +408,7 @@ gawk -F '\t' \
                 line_content = line_content tbs_r
             }
         }
-        # 返回行: tbs_l表示最左侧的表格样式, line_content表示该行的内容
+        # 返回行: tbs_l 表示最左侧的表格样式, line_content 表示该行的内容
         return tbs_l line_content
     }
     ' 

@@ -1,5 +1,9 @@
 # shell脚本
 
+## 特性
+
+1. 支持 centos、mac 和 ubuntu 等多种平台
+
 ## draw_table.sh
 
 #### 1. 功能
@@ -55,6 +59,3 @@ A          5          C
 A 78 B 34 B   B   B   C
 1cccc2cccc2ccc2ccc2ccc3
 ```
-
-
-
