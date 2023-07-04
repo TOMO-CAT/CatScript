@@ -92,7 +92,9 @@ case $color in
         colors="${color/"%"/}"
         ;;
 esac
-colors="${colors:-"-4,-8,-4"}"
+# colors="${colors:-"-4,-8,-4"}"
+# 默认不展示颜色
+colors="${colors:-",,"}"
 
 # echo "colors: ${colors}"
 
@@ -135,9 +137,9 @@ awk -F '\t' \
     } END {
         # ------------------------------------------ colors 变量着色, 生成 colors 和 tbs 变量 ------------------------------------------
         # 构建颜色向量: colors, 长度为16
-        color_sum = split(color_s,clr_id,",")
+        color_sum = split(color_s, clr_id, ",")
         if (color_sum == 3){ # 简易自定义模式: 传入三种颜色
-            for (i=1; i<=3; i++) {
+            for (i=1; i <= 3; i++) {
                 if (color_s ~ "-") {
                     clr_id[i] = color_var(clr_id[i])
                 }
@@ -152,7 +154,7 @@ awk -F '\t' \
                     colors[i] = clr_id[3]
                 }
             }
-        } else if (color_sum == 16){ # 全自定义模式: 传入 16 种颜色
+        } else if (color_sum == 16) { # 全自定义模式: 传入 16 种颜色
             for (i = 1; i <= 16; i++) {
                 if(color_s ~ "-") {
                     clr_id[i] = color_var(clr_id[i])
@@ -166,17 +168,112 @@ awk -F '\t' \
         clr_font = colors[10] # 第10位制表符的颜色, 也就是单元格内填充字符的颜色
 
         # 构建已着色的制表符向量: tbs, 长度16
-        for (i=1; i<=length(table_s); i++){
-            if(colors[i]=="")
-                tbs[i] = substr(table_s, i, 1) # 获取第i个制表符
+        # 1. 制表符是单字节字符串, 例如: `+++++++++,---|||`
+        if (length(table_s) == 16) {
+            for (i = 1; i <= length(table_s); i++){
+                if (colors[i] == "")
+                    tbs[i] = substr(table_s, i, 1) # 获取第i个制表符
+                else
+                    tbs[i] = colors[i] substr(table_s, i, 1) clr_end # 给制表符着色, 例如红色 `\033[31m制表符\033[0m`
+                fi
+            }
+        } else if (length(table_s) == 46) {
+            # 2. 制表符是三字节字符串, 例如: `└┴┘├┼┤┌┬┐ ───│││`
+            # 解析前 9 个制表符
+            tbs_idx = 1
+            for (i = 1; i <= 27; i = i + 3) {
+                if (colors[tbs_idx] == "")
+                    tbs[tbs_idx] = substr(table_s, i, 3)
+                else
+                    tbs[tbs_idx] = colors[tbs_idx] substr(table_s, i, 3) clr_end
+                fi
+                tbs_idx++
+            }
+            # 如果 table_s 长度为 46, 那么第 10 位一般是空格或者逗号等一个字节
+            if (colors[10] == "")
+                tbs[10] = substr(table_s, 28, 1)
             else
-                tbs[i] = colors[i] substr(table_s,i,1) clr_end # 给制表符着色, 例如红色 `\033[31m制表符\033[0m`
-            fi
+                tbs[10] = colors[i] substr(table_s, 28, 1) clr_end
+            tbs_idx++
+            # 解析最后 6 个三字节制表符
+            for (i = 29; i <= 46; i = i + 3) {
+                if (colors[tbs_idx] == "")
+                    tbs[tbs_idx] = substr(table_s, i, 3)
+                else
+                    tbs[tbs_idx] = colors[tbs_idx] substr(table_s, i, 3) clr_end
+                fi
+                tbs_idx++
+            }
+
+        } else if (length(table_s) == 42) {
+            # 3. 制表符是部分三字节字符串, 例如: `╚═╝║╬║╔═╗ ═ ═║ ║`
+            # 解析前 9 个制表符
+            tbs_idx = 1
+            for (i = 1; i <= 27; i = i + 3) {
+                if (colors[tbs_idx] == "")
+                    tbs[tbs_idx] = substr(table_s, i, 3)
+                else
+                    tbs[tbs_idx] = colors[tbs_idx] substr(table_s, i, 3) clr_end
+                fi
+                tbs_idx++
+            }
+            
+            # # 解析第 10 ~ 16 个制表符
+            if (colors[10] == "")
+                tbs[10] = substr(table_s, 28, 1)
+            else
+                tbs[10] = colors[10] substr(table_s, 28, 1) clr_end
+            tbs_idx++
+
+            if (colors[11] == "")
+                tbs[11] = substr(table_s, 29, 3)
+            else
+                tbs[11] = colors[11] substr(table_s, 29, 3) clr_end
+            tbs_idx++
+
+            if (colors[12] == "")
+                tbs[12] = substr(table_s, 32, 1)
+            else
+                tbs[12] = colors[12] substr(table_s, 32, 1) clr_end
+            tbs_idx++
+
+            if (colors[13] == "")
+                tbs[13] = substr(table_s, 33, 3)
+            else
+                tbs[13] = colors[13] substr(table_s, 33, 3) clr_end
+            tbs_idx++
+
+            if (colors[14] == "")
+                tbs[14] = substr(table_s, 36, 3)
+            else
+                tbs[14] = colors[14] substr(table_s, 36, 3) clr_end
+            tbs_idx++
+
+            if (colors[15] == "")
+                tbs[15] = substr(table_s, 39, 1)
+            else
+                tbs[15] = colors[15] substr(table_s, 39, 1) clr_end
+            tbs_idx++
+
+            if (colors[16] == "")
+                tbs[16] = substr(table_s, 40, 3)
+            else
+                tbs[16] = colors[16] substr(table_s, 40, 3) clr_end
+            tbs_idx++
+
+            # # DEBUG
+            # for (i = 1; i <= 16; ++i) {
+            #     print "tbs[" i "]: " tbs[i]
+            # }
+        } else {
+            # 4. 暂未支持的制表符长度
+            print "quit with unsupported table style: " table_s
+            exit 1
         }
 
         # ------------------------------------------ 如果单列长度大于非单列最大行长度则调整各列长度 ------------------------------------------
         max_line_len = 0 # 统计非单列的最大行长度
-        for (i=1; i<=length(cols_len); i++) {
+        for (i = 1; i <= length(cols_len); i++) {
             max_line_len = max_line_len + cols_len[i] + 2 # 每列需要包含2个空格, 防止内容和制表符紧挨着
         }
         max_line_len = max_line_len + length(cols_len) - 1 # 多列的行最大总长度需要包含每列之间的制表符个数(列数 -1)
@@ -298,7 +395,7 @@ awk -F '\t' \
         }else if(color=="-0" || color=="-reset"){
             n=0
         }else{
-            n=0
+            return ""
         }
         return "\033[" n "m"
     }

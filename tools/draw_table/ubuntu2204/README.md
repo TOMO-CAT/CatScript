@@ -32,7 +32,6 @@ echo -e '1
 1\t2\t3\t4' | sh draw_table.sh
 
 # 自定义颜色和样式
-# FIXIT: 在 ubuntu 上个别样式会乱码
 echo -e "Module Log Analyse
 Function Name\tCount
 Function1\t20
