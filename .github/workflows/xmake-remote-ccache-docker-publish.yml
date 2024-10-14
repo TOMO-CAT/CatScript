@@ -61,6 +61,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           file: ./docker/xmake-remote-cache/Dockerfile
+          context: ./docker/xmake-remote-cache
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
