@@ -24,10 +24,10 @@ jobs:
                 username: DOCKER_USERNAME
                 password: DOCKER_PASSWORD
                 image: docker4cat/xmake-remote-cache
-              # - registry: harbor.zelostech.com.cn:5443
-              #   username: ZELOS_USERNAME
-              #   password: ZELOS_PASSWORD
-              #   image: harbor.zelostech.com.cn:5443/business/docker4cat/xmake-remote-cache
+              - registry: harbor.zelostech.com.cn:5443
+                username: ZELOS_USERNAME
+                password: ZELOS_PASSWORD
+                image: harbor.zelostech.com.cn:5443/business/docker4cat/xmake-remote-cache
 
     # permissions:
     #   contents: read
