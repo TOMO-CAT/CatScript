@@ -2,17 +2,17 @@
 
 set -e
 
+# Docker Container 名
+DOCKER_CONTAINER="container_${USER}_${PROJECT_NAME}"
+# Docker hostname
+DOCKER_HOSTNAME="docker_dev"
+
 # 项目所在文件夹
 PROJECT_BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")";pwd)"
 # 项目名: 取自项目文件夹
 PROJECT_NAME="$(basename ${PROJECT_BASE_DIR})"
 # Docker 镜像
 DOCKER_IMAGE="${PROJECT_NAME}:latest"
-# Docker Container 名
-# DOCKER_CONTAINER="container_${USER}_${PROJECT_NAME}"
-DOCKER_CONTAINER="${USER}_${PROJECT_NAME}"
-# Docker hostname
-DOCKER_HOSTNAME="docker_dev_machine"
 
 function info() {
   (>&2 printf "[\e[34m\e[1mINFO\e[0m] $*\n")
@@ -30,15 +30,11 @@ function ok() {
   (>&2 printf "[\e[32m\e[1m OK \e[0m] $*\n")
 }
 
-function get_project_name() {
-  basename "$(pwd)"
-}
-
 function help_info() {
   local bash_name=$(basename "${BASH_SOURCE[0]}")
   echo "Usage: bash docker.sh COMMAND [OPTIONS]"
   echo ""
-  echo "A script to build/run/delete docker container easyily"
+  echo "A script to build/run/delete docker container easily"
   echo ""
   echo "Commands:"
   echo "  run              Run container."
@@ -51,13 +47,17 @@ function help_info() {
   echo ""
 }
 
+function docker_run() {
+  docker exec -it ${DOCKER_CONTAINER} /bin/bash -c "source /home/${USER}/.profile && /bin/bash"
+}
+
 function docker_build() {
   # 检查镜像是否存在, 不存在则 build
   if docker images | awk '{print $1":"$2}' | grep -q ${DOCKER_IMAGE}; then
     info "Docker image ${DOCKER_IMAGE} already exists."
   else
     info "Docker image ${DOCKER_IMAGE} does not exist. Start building..."
-    docker build -t ${DOCKER_IMAGE} .
+    docker build --build-arg USER_NAME="${USER}" -t ${DOCKER_IMAGE} .
   fi
 
   # 检查 docker container 是否存在, 存在则 docker build 结束
@@ -76,26 +76,24 @@ function docker_build() {
   local display=":0"
 
   ## 2. 设备映射
-  local devices=" -v /dev:/dev"
+  local devices=" --volume /dev:/dev"
 
   ## 3. 其他参数
-  local user_id=$(id -u)
-  local grp=$(id -g -n)
-  local grp_id=$(id -g)
-  local local_host=$(hostname)
+  USER_ID=$(id -u)
+  GRP=$(id -g -n)
+  GRP_ID=$(id -g)
+  LOCAL_HOST=$(hostname)
 
-  ## 4. home 目录, 当前不允许以 root 账户启动镜像 (因为后面有一些 home 目录的 -v 映射, 容易影响宿主机)
-  local docker_home="/home/$USER"
-  if [ "$USER" == "root" ]; then
-    docker_home="/root"
-    error "Please don't run docker.sh with root account, it is really dangerous!"
-    exit -1
-  fi
+  ## 4. home 目录
+  DOCKER_HOME="/home/$USER"
+  [ "$USER" == "root" ] && DOCKER_HOME="/root"
 
-  # # 创建一些宿主机目录方便后面映射
-  # if [ ! -d "$HOME/.cache" ];then
-  #     mkdir "$HOME/.cache"
-  # fi
+  ## 创建一些宿主机目录方便后面映射, 避免 --volume 挂载时文件不存在
+  [ ! -f "${HOME}/.gitconfig" ] && touch "${HOME}/.gitconfig"
+  # 不挂载 ~/.profile 和 ~/.bashrc 了, 因为如果这里面定义了 CXX CPP CC 和 LD 环境变量会影响交叉编译
+  # [ ! -f "${HOME}/.profile" ] && touch "${HOME}/.profile"
+  # [ ! -f "${HOME}/.bashrc" ] && touch "${HOME}/.bashrc"
+  [ ! -d "${HOME}/.ssh" ] && mkdir "${HOME}/.ssh"
 
   ## 5. 通用参数
   #
@@ -106,20 +104,27 @@ function docker_build() {
     --privileged \
     --restart always \
     --name ${DOCKER_CONTAINER} \
-    -e DISPLAY=${display} \
-    -e DOCKER_USER=root \
-    -e USER=${USER} \
-    -e DOCKER_USER_ID=${user_id} \
-    -e DOCKER_GRP=${grp} \
-    -e DOCKER_GRP_ID=${grp_id} \
-    -e DOCKER_IMG=${DOCKER_IMAGE} \
-    -v ${PROJECT_BASE_DIR}:/${PROJECT_NAME} \
-    -v ${HOME}/.gitconfig:${docker_home}/.gitconfig\
-    -v ${HOME}/.ssh:${docker_home}/.ssh \
-    -v ${HOME}/.bypy:${docker_home}/.bypy \
-    -v ${HOME}/.profile:${docker_home}/.profile \
+    --env DISPLAY=${display} \
+    --env DOCKER_USER=root \
+    --env USER=${USER} \
+    --env DOCKER_USER_ID=${USER_ID} \
+    --env DOCKER_GRP=${GRP} \
+    --env DOCKER_GRP_ID=${GRP_ID} \
+    --env DOCKER_IMG=${DOCKER_IMAGE} \
+    --volume ${PROJECT_BASE_DIR}:/${PROJECT_BASE_DIR} \
+    --volume ${HOME}/.gitconfig:${DOCKER_HOME}/.gitconfig \
+    --volume ${HOME}/.ssh:${DOCKER_HOME}/.ssh \
+    --volume /etc/passwd:/etc/passwd:ro \
+    --volume /etc/shadow:/etc/shadow:ro \
+    --volume /etc/group:/etc/group:ro \
+    --volume /etc/localtime:/etc/localtime:ro \
+    --volume /etc/resolv.conf:/etc/resolv.conf:ro \
     ${devices} \
-    -w /${PROJECT_NAME}"
+    --net host \
+    --add-host in_dev_docker:127.0.0.1 \
+    --add-host ${LOCAL_HOST}:127.0.0.1 \
+    --hostname in_dev_docker \
+    --workdir ${PROJECT_BASE_DIR}"
 
   # 启动 docker container
   info "Starting docker container \"${DOCKER_CONTAINER}\" ..."
@@ -141,37 +146,8 @@ function docker_build() {
     # 如果 -u ${USER} 会报错 docker: Error response from daemon: unable to find user cat: no matching entries in passwd file.
     # 可以使用 --user $(id -u) 代替
     #
-    docker run ${general_param} \
-        -v /etc/passwd:/etc/passwd:ro \
-        -v /etc/shadow:/etc/shadow:ro \
-        -v /etc/group:/etc/group:ro \
-        -v /etc/localtime:/etc/localtime:ro \
-        -v /etc/resolv.conf:/etc/resolv.conf:ro \
-        -v ${HOME}/.bashrc:${docker_home}/.bashrc:ro \
-        --net host \
-        --add-host ${DOCKER_HOSTNAME}:127.0.0.1 \
-        --add-host ${local_host}:127.0.0.1 \
-        --hostname ${DOCKER_HOSTNAME} \
-        --user $(id -u) \
-        ${DOCKER_IMAGE} \
-        /bin/bash
+    docker run ${general_param} ${DOCKER_IMAGE} /bin/bash
   fi
-
-
-  # 添加非 root 账户
-  [ "${USER}" != "root" ] && {
-    info "add ${USER} in the container with ${HOME}"
-    [ "$(uname)" == "Darwin" ] && {
-      docker exec ${DOCKER_CONTAINER} bash -c "useradd $USER -m --home /home/$USER || echo $?"
-      docker exec ${DOCKER_CONTAINER} bash -c "echo '$USER ALL=NOPASSWD: ALL' >> /etc/sudoers"
-      docker exec ${DOCKER_CONTAINER} bash -c "chown -R $USER"
-    } || {
-      docker exec -u root ${DOCKER_CONTAINER} bash -c "echo '$USER ALL=NOPASSWD: ALL' >> /etc/sudoers"
-      # 由于 ~/.bashrc 等文件是只读的, 因此这里使用 `|| true``
-      docker exec -u root ${DOCKER_CONTAINER} bash -c "chown -R $USER:$USER ${docker_home} || true"
-      # docker exec ${DOCKER_CONTAINER} bash -c "chown -R $USER:$USER /dev/bus/usb"
-    }
-  }
 
   # 如果当前目录根目录存在 BLADE_ROOT 则以 USER 用户安装 blade
   # 目前都是自己手动安装: "cd thirdparty/blade-build/ && ./install && /bin/bash"
@@ -183,19 +159,7 @@ function docker_build() {
   # }
 
   docker exec ${DOCKER_CONTAINER} /bin/bash -c 'echo DOCKER_IMAGE: ${DOCKER_IMG}'
-  ok 'Docker environment has already been setted up, you can enter with cmd: "bash docker.sh"'
-}
-
-function docker_run() {
-  # TODO(cat): 如何做到 attach 到 container 默认就是 ${USER} 账户?
-  [ "$(uname)" == "Darwin" ] && {
-    docker exec -it -u ${USER} ${DOCKER_CONTAINER} /bin/bash
-  } || {
-    # docker exec -it --user $(id -u):$(id -g) ${DOCKER_CONTAINER} /bin/bash -c \
-    #   "mkdir -p /zelos/log/{xxka,xxkb,z_topic,z_recorder} && mkdir -p /zelos/record && source /home/$USER/.profile && /bin/bash"
-    docker exec -it --user $(id -u):$(id -g) ${DOCKER_CONTAINER} /bin/bash -c \
-      "source /home/$USER/.profile && /bin/bash"
-  }
+  ok 'Docker environment has already been setted up, you can enter with cmd: "bash scripts/docker.sh run"'
 }
 
 function docker_clear() {
@@ -227,6 +191,7 @@ function docker_clear() {
     info "Deleting docker image \"${DOCKER_IMAGE}\" ..."
     docker rmi ${DOCKER_IMAGE}
   fi
+  ok "Delete docker container [${DOCKER_CONTAINER}] successfully!"
 }
 
 function main() {
